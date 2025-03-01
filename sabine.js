@@ -6,13 +6,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const container = document.querySelector(".container");
     const emojiContainer = document.querySelector(".emoji-container");
     const confettiContainer = document.querySelector(".confetti-container");
-
-    // Initialize particles.js
+    
+    // Check if device is mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Adjust particle density based on device
+    const particleCount = isMobile ? 30 : 80;
+    
+    // Initialize particles.js with responsive settings
     if (typeof particlesJS !== 'undefined') {
         particlesJS("particles-js", {
             "particles": {
                 "number": {
-                    "value": 80,
+                    "value": particleCount,
                     "density": {
                         "enable": true,
                         "value_area": 800
@@ -60,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 "move": {
                     "enable": true,
-                    "speed": 2,
+                    "speed": isMobile ? 1 : 2,
                     "direction": "none",
                     "random": true,
                     "straight": false,
@@ -77,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 "detect_on": "canvas",
                 "events": {
                     "onhover": {
-                        "enable": true,
+                        "enable": !isMobile,
                         "mode": "bubble"
                     },
                     "onclick": {
@@ -123,18 +129,27 @@ document.addEventListener('DOMContentLoaded', function() {
     // Track No button evasion count
     let noButtonEvadeCount = 0;
     
-    // Make the "No" button move away with progressively more difficulty
-    noButton.addEventListener("mouseover", () => {
+    // Adjust evasion behavior based on device
+    const handleNoButtonEvasion = (event) => {
+        // For touch devices, prevent default to avoid scrolling
+        if (event.type === 'touchstart') {
+            event.preventDefault();
+        }
+        
         noButtonEvadeCount++;
         
         // Make the movement more erratic as user tries more times
         const speed = Math.min(noButtonEvadeCount * 50, 400);
-        const moveX = Math.random() > 0.5 ? 1 : -1;
-        const moveY = Math.random() > 0.5 ? 1 : -1;
         
         // Calculate new position with boundaries
-        const maxX = window.innerWidth - noButton.clientWidth - 20;
-        const maxY = window.innerHeight - noButton.clientHeight - 20;
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        
+        const buttonWidth = noButton.offsetWidth;
+        const buttonHeight = noButton.offsetHeight;
+        
+        const maxX = viewportWidth - buttonWidth - 20;
+        const maxY = viewportHeight - buttonHeight - 20;
         
         let newX = Math.random() * maxX;
         let newY = Math.random() * maxY;
@@ -144,10 +159,11 @@ document.addEventListener('DOMContentLoaded', function() {
         newY = Math.max(20, Math.min(newY, maxY));
         
         // Apply smooth movement with transition
-        noButton.style.position = "absolute";
+        noButton.style.position = "fixed"; // Changed from absolute to fixed for better positioning
         noButton.style.transition = `all ${0.2 + Math.random() * 0.3}s ease-out`;
         noButton.style.left = `${newX}px`;
         noButton.style.top = `${newY}px`;
+        noButton.style.zIndex = "50"; // Ensure it stays above other elements
         
         // Make the Yes button more prominent
         yesButton.style.transform = 'scale(1.1)';
@@ -171,13 +187,26 @@ document.addEventListener('DOMContentLoaded', function() {
             const messageIdx = Math.min(noButtonEvadeCount - 3, messages.length - 1);
             showFloatingMessage(messages[messageIdx]);
         }
-    });
+    };
+    
+    // Add different event listeners based on device type
+    if (isMobile) {
+        noButton.addEventListener("touchstart", handleNoButtonEvasion, { passive: false });
+    } else {
+        noButton.addEventListener("mouseover", handleNoButtonEvasion);
+    }
 
     // Show message when clicking "Yes"
-    yesButton.addEventListener("click", () => {
+    const handleYesClick = (event) => {
+        // For touch devices, prevent default to avoid double actions
+        if (event.type === 'touchstart') {
+            event.preventDefault();
+        }
+        
         // Hide the main container
         container.style.opacity = "0";
         container.style.transform = "scale(0.8)";
+        container.style.pointerEvents = "none"; // Prevent interactions with hidden container
         
         // Show celebration
         setTimeout(() => {
@@ -185,39 +214,71 @@ document.addEventListener('DOMContentLoaded', function() {
             messageBox.style.display = "flex";
             createConfetti();
             createBurstEmojis();
+            
+            // Scroll to top if needed on mobile
+            if (isMobile) {
+                window.scrollTo({top: 0, behavior: 'smooth'});
+            }
         }, 300);
         
         // Add sound if browser allows
         try {
             const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-cartoon-positive-sound-2255.mp3');
             audio.volume = 0.5;
-            audio.play();
+            audio.play().catch(e => console.log("Audio play prevented by browser policy"));
         } catch (e) {
             console.log("Browser blocked audio autoplay");
         }
-    });
+    };
+    
+    // Add event listeners for yes button
+    yesButton.addEventListener("click", handleYesClick);
+    if (isMobile) {
+        yesButton.addEventListener("touchstart", handleYesClick, { passive: false });
+    }
 
     // Try to click the No button (make it harder to click)
-    noButton.addEventListener("click", (e) => {
-        e.preventDefault();
+    const handleNoClick = (event) => {
+        // For touch devices, prevent default
+        if (event.type === 'touchstart') {
+            event.preventDefault();
+        }
         
         // 95% chance the click doesn't work
         if (Math.random() < 0.95) {
             // Move the button
-            const x = Math.random() * (window.innerWidth - noButton.clientWidth - 100);
-            const y = Math.random() * (window.innerHeight - noButton.clientHeight - 100);
-            noButton.style.position = "absolute";
+            const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+            const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+            
+            const buttonWidth = noButton.offsetWidth;
+            const buttonHeight = noButton.offsetHeight;
+            
+            const x = Math.random() * (viewportWidth - buttonWidth - 50);
+            const y = Math.random() * (viewportHeight - buttonHeight - 50);
+            
+            noButton.style.position = "fixed";
             noButton.style.left = `${x}px`;
             noButton.style.top = `${y}px`;
             
             showFloatingMessage("Nice try! You can't deny it! 🐴");
             return false;
         }
-    });
+    };
+    
+    // Add event listeners for no button click
+    noButton.addEventListener("click", handleNoClick);
+    if (isMobile) {
+        noButton.addEventListener("touchstart", handleNoClick, { passive: false });
+    }
 
     // Share box features
     if (shareBox) {
-        shareBox.addEventListener("click", () => {
+        const handleShareClick = (event) => {
+            // For touch devices, prevent default
+            if (event.type === 'touchstart') {
+                event.preventDefault();
+            }
+            
             // Create a fun surprise
             createEmojiExplosion();
             
@@ -226,24 +287,43 @@ document.addEventListener('DOMContentLoaded', function() {
             const donkeyFacts = [
                 "Sabine's donkey status is now official! 🏆",
                 "Now everyone will know Sabine is a donkey! 📢",
-                "Sabine has earned his donkey certification! 🎓",
+                "Sabine has earned her donkey certification! 🎓",
                 "Sabine: 10% human, 90% donkey! 🐴",
                 "Breaking news: Sabine identified as donkey! 📰"
             ];
             messageText.textContent = donkeyFacts[Math.floor(Math.random() * donkeyFacts.length)];
             
+            // Try to share on supported devices
+            if (navigator.share && isMobile) {
+                try {
+                    navigator.share({
+                        title: 'Sabine is a Donkey!',
+                        text: 'BREAKING NEWS: Sabine has been officially identified as a donkey! 🐴',
+                        url: window.location.href
+                    }).catch(err => console.log('Sharing failed', err));
+                } catch (err) {
+                    console.log('Share not supported', err);
+                }
+            }
+            
             // Add donkey braying sound if browser allows
             try {
                 const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-funny-cartoon-tones-2255.mp3');
                 audio.volume = 0.5;
-                audio.play();
+                audio.play().catch(e => console.log("Audio play prevented by browser policy"));
             } catch (e) {
                 console.log("Browser blocked audio autoplay");
             }
-        });
+        };
+        
+        // Add event listeners for share box
+        shareBox.addEventListener("click", handleShareClick);
+        if (isMobile) {
+            shareBox.addEventListener("touchstart", handleShareClick, { passive: false });
+        }
     }
 
-    // Generate Floating Emojis background
+    // Generate Floating Emojis background - reduced for mobile
     function createEmoji() {
         const emoji = document.createElement("div");
         const emojiTypes = ["🐴", "🐎", "🐄", "🐮", "🧠", "❓", "😂"];
@@ -260,12 +340,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 6000);
     }
 
-    // Start creating emojis
-    setInterval(createEmoji, 300);
+    // Start creating emojis - fewer for mobile
+    const emojiInterval = setInterval(createEmoji, isMobile ? 500 : 300);
+    
+    // Clear interval when page is not visible to save resources
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            clearInterval(emojiInterval);
+        } else {
+            setInterval(createEmoji, isMobile ? 500 : 300);
+        }
+    });
 
-    // Burst Emojis when clicking "Yes"
+    // Burst Emojis when clicking "Yes" - adjusted for device
     function createBurstEmojis() {
-        for (let i = 0; i < 30; i++) {
+        const burstCount = isMobile ? 20 : 30;
+        
+        for (let i = 0; i < burstCount; i++) {
             setTimeout(() => {
                 const emoji = document.createElement("div");
                 const emojiTypes = ["🐴", "🐎", "🐄", "🧠", "😂", "🤣", "🐴"];
@@ -285,11 +376,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Create confetti for celebration
+    // Create confetti for celebration - adjusted for device performance
     function createConfetti() {
         const colors = ['#a18cd1', '#fbc2eb', '#8a5fff', '#fad0c4', '#ffecd2', '#a6c0fe'];
+        const confettiCount = isMobile ? 50 : 100;
         
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < confettiCount; i++) {
             setTimeout(() => {
                 const confetti = document.createElement('div');
                 confetti.classList.add('confetti');
@@ -335,16 +427,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Create emoji explosion effect
+    // Create emoji explosion effect - adjusted for device
     function createEmojiExplosion() {
-        const totalEmojis = 150;
+        const totalEmojis = isMobile ? 80 : 150;
         const emojiTypes = ["🐴", "🐎", "🐄", "🧠", "😂", "🤣", "🐴"];
         
         for (let i = 0; i < totalEmojis; i++) {
             setTimeout(() => {
                 const emoji = document.createElement("div");
                 emoji.innerHTML = emojiTypes[Math.floor(Math.random() * emojiTypes.length)];
-                emoji.style.position = "absolute";
+                emoji.style.position = "fixed"; // Changed to fixed for better positioning
                 emoji.style.fontSize = `${Math.random() * 30 + 10}px`;
                 emoji.style.zIndex = "200";
                 
@@ -382,24 +474,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Show floating message
+    // Show floating message - adjusted for responsive design
     function showFloatingMessage(text) {
         const message = document.createElement("div");
         message.textContent = text;
-        message.style.position = "absolute";
+        message.style.position = "fixed"; // Changed to fixed for better positioning
         message.style.color = "#7d55c7";
         message.style.fontWeight = "bold";
-        message.style.fontSize = "20px";
+        message.style.fontSize = isMobile ? "16px" : "20px";
         message.style.padding = "10px 20px";
         message.style.background = "rgba(255, 255, 255, 0.9)";
         message.style.borderRadius = "20px";
         message.style.boxShadow = "0 4px 10px rgba(0, 0, 0, 0.15)";
         message.style.zIndex = "50";
+        message.style.maxWidth = "80%";
+        message.style.textAlign = "center";
         
-        // Position near the no button
+        // Position near the no button or in center for mobile
         const noRect = noButton.getBoundingClientRect();
-        message.style.left = `${noRect.left}px`;
-        message.style.top = `${noRect.top - 50}px`;
+        
+        if (isMobile) {
+            // For mobile, position in center bottom
+            message.style.left = "50%";
+            message.style.bottom = "10%";
+            message.style.transform = "translateX(-50%)";
+        } else {
+            message.style.left = `${noRect.left}px`;
+            message.style.top = `${noRect.top - 50}px`;
+        }
         
         // Add to body
         document.body.appendChild(message);
@@ -407,21 +509,41 @@ document.addEventListener('DOMContentLoaded', function() {
         // Animate in
         message.style.transition = "all 0.5s ease-in-out";
         message.style.opacity = "0";
-        message.style.transform = "translateY(20px)";
+        message.style.transform = isMobile ? "translate(-50%, 20px)" : "translateY(20px)";
         
         setTimeout(() => {
             message.style.opacity = "1";
-            message.style.transform = "translateY(0)";
+            message.style.transform = isMobile ? "translate(-50%, 0)" : "translateY(0)";
         }, 10);
         
         // Remove after a delay
         setTimeout(() => {
             message.style.opacity = "0";
-            message.style.transform = "translateY(-20px)";
+            message.style.transform = isMobile ? "translate(-50%, -20px)" : "translateY(-20px)";
             
             setTimeout(() => {
                 message.remove();
             }, 500);
         }, 2000);
+    }
+    
+    // Handle orientation change
+    window.addEventListener('orientationchange', function() {
+        // Fix for iOS Safari height issues
+        const viewportHeight = window.innerHeight;
+        document.documentElement.style.height = `${viewportHeight}px`;
+        
+        // Reset no button position after orientation change
+        setTimeout(() => {
+            noButton.style.position = "relative";
+            noButton.style.left = "auto";
+            noButton.style.top = "auto";
+        }, 100);
+    });
+    
+    // Apply iOS height fix on load
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        const viewportHeight = window.innerHeight;
+        document.documentElement.style.height = `${viewportHeight}px`;
     }
 });
