@@ -177,8 +177,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 "You know it's true! 🐴",
                 "Stop denying it! 😂",
                 "The truth hurts, doesn't it?",
-                "Sabine = 🐴, just admit it!",
-                "We all know Sabine is a donkey!",
+                "Noha = 🐴, just admit it!",
+                "We all know Noha is a donkey!",
                 "Why are you defending a donkey?",
                 "This button won't let you lie!"
             ];
@@ -285,11 +285,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Change message text
             const messageText = messageBox.querySelector("p");
             const donkeyFacts = [
-                "Sabine's donkey status is now official! 🏆",
-                "Now everyone will know Sabine is a donkey! 📢",
-                "Sabine has earned her donkey certification! 🎓",
-                "Sabine: 10% human, 90% donkey! 🐴",
-                "Breaking news: Sabine identified as donkey! 📰"
+                "Noha's donkey status is now official! 🏆",
+                "Now everyone will know Noha is a donkey! 📢",
+                "Noha has earned her donkey certification! 🎓",
+                "Noha: 10% human, 90% donkey! 🐴",
+                "Breaking news: Noha identified as donkey! 📰"
             ];
             messageText.textContent = donkeyFacts[Math.floor(Math.random() * donkeyFacts.length)];
             
@@ -297,8 +297,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (navigator.share && isMobile) {
                 try {
                     navigator.share({
-                        title: 'Sabine is a Donkey!',
-                        text: 'BREAKING NEWS: Sabine has been officially identified as a donkey! 🐴',
+                        title: 'Noha is a Donkey!',
+                        text: 'BREAKING NEWS: Noha has been officially identified as a donkey! 🐴',
                         url: window.location.href
                     }).catch(err => console.log('Sharing failed', err));
                 } catch (err) {
